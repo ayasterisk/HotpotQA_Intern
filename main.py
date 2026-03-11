@@ -1,31 +1,27 @@
-from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
-from pydantic import BaseModel
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
-from fastapi import Request
-
+import streamlit as st
 from qa_service import answer_question
 
-app = FastAPI()
+# Cài đặt tiêu đề trang web
+st.set_page_config(page_title="Hệ thống Hỏi Đáp", page_icon="🤖")
+st.title("Hệ thống Hỏi Đáp với Neo4j & OpenRouter")
 
-templates = Jinja2Templates(directory="templates")
+# Tạo form nhập câu hỏi
+question = st.text_input("Nhập câu hỏi của bạn vào đây:")
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
-
-class Question(BaseModel):
-    question: str
-
-
-@app.get("/", response_class=HTMLResponse)
-def home(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
-
-
-@app.post("/ask")
-def ask_question(q: Question):
-
-    answer = answer_question(q.question)
-
-    return {"answer": answer}
+# Khi người dùng bấm nút "Gửi"
+if st.button("Gửi câu hỏi"):
+    if question.strip() == "":
+        st.warning("Vui lòng nhập câu hỏi trước khi gửi!")
+    else:
+        # Hiển thị vòng xoay chờ đợi trong lúc xử lý
+        with st.spinner("Hệ thống đang suy nghĩ..."):
+            try:
+                # Gọi hàm xử lý từ file qa_service của bạn
+                answer = answer_question(question)
+                
+                # In câu trả lời ra màn hình
+                st.success("Đã tìm thấy câu trả lời!")
+                st.write(answer)
+                
+            except Exception as e:
+                st.error(f"Có lỗi xảy ra trong quá trình xử lý: {e}")
