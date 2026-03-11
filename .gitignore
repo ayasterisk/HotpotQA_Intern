@@ -1,0 +1,5 @@
+# Bỏ qua thư mục chứa key của Streamlit
+.streamlit/secrets.toml
+
+# Bỏ qua file .env (nếu bạn có dùng)
+.env
