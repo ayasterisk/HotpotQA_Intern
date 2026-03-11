@@ -1,0 +1,38 @@
+
+BÁO CÁO KHAI PHÁ DỮ LIỆU HOTPOTQA (Sample 1K)
+
+1. Tổng quan Dữ liệu
+Báo cáo này được thực hiện dựa trên tập dữ liệu con gồm 1000 mẫu (hotpot_mini_1k) từ bộ dữ liệu hỏi đáp HotpotQA. 
+Phân tích tập trung vào các đặc trưng: 
+Độ khó (level), Loại câu hỏi (type), Độ dài văn bản (Word_Count) và Số lượng bằng chứng hỗ trợ (Num_Supporting_Facts).
+
+2. Phân tích Chi tiết từ Trực quan hóa
+2.1. Phân bố Độ khó câu hỏi
+Chiếm ưu thế: Hơn một nửa tập dữ liệu (62.9% - tương đương 629 câu) thuộc mức độ trung bình (medium).
+Ít phổ biến hơn: Mức độ khó (hard) và dễ (easy) có tỉ lệ khá tương đồng nhau, lần lượt chiếm 19.8% (198 câu) và 17.3% (173 câu).
+
+-> Tập dữ liệu có sự mất cân bằng nhẹ về độ khó, tập trung chủ yếu vào nhóm câu hỏi trung bình.
+
+2.2. Phân bố Loại câu hỏi
+Dữ liệu được chia thành hai loại: câu hỏi bắc cầu/chuỗi suy luận (bridge) và câu hỏi so sánh (comparison).
+Biểu đồ cho thấy sự áp đảo của loại câu hỏi bridge (khoảng gần 800 câu) so với comparison (chỉ khoảng hơn 200 câu). Tỉ lệ xấp xỉ 4:1.
+-> Nhận xét: Mất cân bằng dữ liệu lớn về phân loại câu hỏi. Nếu dùng tập này để huấn luyện mô hình phân loại, mô hình có thể sẽ thiên lệch (bias) về việc dự đoán nhãn "bridge".
+
+2.3. Mối liên hệ giữa Độ khó và Loại câu hỏi
+Nhóm Medium & Hard: Gần như bị (chiếm?) bởi loại câu hỏi bridge. 
+                    Rất hiếm câu hỏi dạng so sánh (comparison) được đánh giá là khó (hard).
+
+Nhóm Easy: Mặc dù "bridge" vẫn chiếm đa số, nhưng đây là nhóm có tỉ lệ xuất hiện câu hỏi comparison cao nhất so với 2 nhóm còn lại.
+-> Các câu hỏi mang tính chất so sánh (comparison) trong HotpotQA thường có xu hướng
+                    được phân loại ở mức độ dễ hoặc trung bình, hiếm khi là câu hỏi khó.
+
+2.4. Bằng chứng hỗ trợ
+Tổng số Num_Supporting_Facts của dạng bridge (khoảng gần 2000) cao hơn rất nhiều so với comparison (khoảng 400).
+Nhưng hợp lý do số lượng câu hỏi dạng bridge nhiều gấp 4 lần dạng comparison. 
+Trung bình mỗi câu hỏi của cả hai loại đều cần khoảng 2 đến 2.5 câu bằng chứng (facts) để trả lời.
+
+2.5. Tương quan Độ dài Văn bản
+Điểm medium nằm góc phải cao nhất vì nhóm này có tới 629 câu hỏi, tổng dồn lại chắc chắn lớn nhất.
+Số lượng câu hỏi easy (173) ít hơn hard (198). 
+Nhưng trên trục hoành (Tổng số chữ của Câu hỏi), điểm easy lại nằm xa hơn điểm hard (gần 5K so với khoảng 3K).
+-> Các câu hỏi được phân loại là "dễ" (easy) lại có xu hướng được diễn đạt dài dòng (nhiều chữ) hơn so với các câu hỏi "khó" (hard).

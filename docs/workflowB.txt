@@ -1,0 +1,67 @@
+GIAI ĐOẠN 1: Foundation
+Mục tiêu: Setup xong môi trường và có dữ liệu sẵn sàng để xử lý.
+    Cài đặt Môi trường:
+        Cài đặt Python và các thư viện cốt lõi: langchain, neo4j, sentence-transformers, datasets, pandas.
+    Khởi tạo Database Neo4j:
+        Lấy URI, Username, và Password Neo4j để chuẩn bị kết nối từ code Python.
+    Thu gọn Dữ liệu (Downsampling):
+        Sử dụng Stratified Sampling để tải dataset HotpotQA (distractor).
+        Lọc ra 1.000 mẫu đại diện, đảm bảo giữ nguyên tỷ lệ độ khó (Easy/Medium/Hard) và phân loại (Yes/No/Span).
+        Lưu cục bộ thành file hotpot_mini_1k.json để dùng cho các bước sau.
+
+GIAI ĐOẠN 2: Graph Construction
+Mục tiêu: Đưa dữ liệu văn bản vào Neo4j, nhúng Vector và kết nối chúng bằng Bridges.
+    Thiết lập Schema & Index:
+        Tạo Unique Constraint cho Node Document (ID) và Entity (Name) để tránh trùng lặp dữ liệu.
+        Tạo Vector Index trên thuộc tính embedding của Node Document (Kích thước 1024 nếu dùng RoBERTa Large).
+    Node Ingestion:
+        Duyệt qua 1.000 mẫu dữ liệu.
+        Mỗi đoạn văn (context) → Sinh Vector bằng RoBERTa → Lưu thành Node Document chứa text và vector.
+        Tiêu đề đoạn văn → Lưu thành Node Entity.
+        Nối bằng lệnh Cypher: (Document) -[:HAS_TITLE]-> (Entity).
+    Bước Xây Cầu Nối (Edge Creation):
+        Tạo danh sách tất cả các Title (Entities) có trong DB.
+        Duyệt qua văn bản (text) của từng Document.
+        Logic: Nếu Title của Entity B xuất hiện trong nội dung văn bản của Document A → Nối cạnh (Doc A) -[:MENTIONS]-> (Entity B).
+        (Dùng Regex bao quanh chữ để khớp từ chính xác. ex: \bThe Matrix\b).
+
+GIAI ĐOẠN 3: Xây dựng Hybrid Retrieval Engine
+Mục tiêu: Viết hàm kết hợp Vector Search và Graph Traversal.
+    Viết câu lệnh truy vấn lõi (Cypher Query):
+        Viết 1 script Cypher thực hiện 3 tác vụ liền nhau:
+            (1) Tìm Top-2 Document gần nhất bằng Vector Similarity.
+            (2) Từ 2 Document đó, nhảy sang các Entity nó [:MENTIONS] hoặc [:HAS_TITLE].
+            (3) Từ các Entity đó, kéo về các Document lân cận.
+    Đóng gói thành Hàm Python (hybrid_search):
+        Đầu vào: query (Câu hỏi của người dùng).
+        Đầu ra: Chuỗi văn bản (String) chứa thông tin gom được từ Node gốc và các Node hàng xóm.
+    Kiểm thử Độc lập (Unit Test):
+        Chưa dùng LLM hay Agent. Gọi thẳng hàm hybrid_search("Tên câu hỏi khó") và in kết quả ra màn hình.
+        Nếu đoạn văn chứa câu trả lời (hop-2) xuất hiện trong kết quả in ra → Thành công.
+
+GIAI ĐOẠN 4: Xây dựng ReAct Agent (Orchestration)
+Mục tiêu: Gắn LLM và Memory vào để điều phối Động cơ Tìm kiếm.
+    Bọc Tool cho LangChain:
+        Biến hàm hybrid_search ở Giai đoạn 3 thành một LangChain Tool với phần description thật chi tiết 
+        (để Agent biết khi nào nên gọi Tool này).
+    Tích hợp Memory:
+        Khởi tạo ConversationBufferWindowMemory(k=3) để lưu 3 cặp hội thoại gần nhất.
+    Thiết kế System Prompt:
+        Viết Prompt yêu cầu Agent đọc Memory trước khi tìm kiếm (để giải quyết vấn đề "anh ấy/nó").
+        Hướng dẫn Agent format đầu ra theo Reason + Act (Suy nghĩ → Hành động → Quan sát).
+    Khởi tạo AgentExecutor:
+        Kết nối LLM, Memory, Tool, và Prompt vào AgentExecutor.
+        Chạy thử kịch bản Chat nhiều lượt để kiểm tra xem Agent có nhớ ngữ cảnh không.
+
+GIAI ĐOẠN 5: Giao diện (Presentation) & Đánh giá (Evaluation)
+Mục tiêu: Đóng gói thành sản phẩm demo và lấy số liệu báo cáo.
+    Đánh giá Hiệu năng (Evaluation):
+        Cho Agent chạy tự động trên khoảng 50 - 100 câu hỏi trong tập mini.
+        Tính các chỉ số: Exact Match (EM)/F1-Score.
+        Làm bảng so sánh: "Số câu trả lời đúng nếu chỉ dùng Vector RAG" vs "Số câu trả lời đúng khi dùng Hybrid Graph RAG".
+    Xây dựng Giao diện UI:
+        Dùng FastAPI + Frontend đơn giản để tạo một giao diện chat.
+        Tính năng bắt buộc: Hiển thị Reasoning Trace (Dấu vết suy luận). 
+        Trên UI, khi Agent trả lời, phải có nút xổ xuống cho người dùng xem được Agent đã Thought gì, lấy được Context gì từ Graph.
+    Tổng kết Báo cáo:
+        Viết báo cáo phân tích lỗi.

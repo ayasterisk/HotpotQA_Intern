@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta charset="UTF-8">
+<title>GraphRAG Chat</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+<div class="app">
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+
+<h2>GraphRAG</h2>
+
+<button onclick="newChat()">+ New Chat</button>
+
+</div>
+
+
+<!-- MAIN -->
+<div class="main">
+
+<div id="chatbox"></div>
+
+
+<div class="input-area">
+
+<input id="question" placeholder="Ask anything..." />
+
+<button onclick="sendQuestion()">Send</button>
+
+</div>
+
+</div>
+
+</div>
+
+
+
+<script>
+
+async function sendQuestion(){
+
+let input=document.getElementById("question")
+
+let question=input.value.trim()
+
+if(question==="") return
+
+addMessage(question,"user")
+
+input.value=""
+
+showTyping()
+
+let response=await fetch("/ask",{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify({
+question:question
+})
+
+})
+
+let data=await response.json()
+
+removeTyping()
+
+addMessage(data.answer,"bot")
+
+}
+
+
+
+function addMessage(text,sender){
+
+let chat=document.getElementById("chatbox")
+
+let msg=document.createElement("div")
+
+msg.classList.add("message")
+
+if(sender==="user"){
+
+msg.classList.add("user-row")
+
+msg.innerHTML=
+
+"<div class='bubble user'>"+text+"</div>"+
+"<div class='avatar user-avatar'>U</div>"
+
+}
+
+else{
+
+msg.classList.add("bot-row")
+
+msg.innerHTML=
+
+"<div class='avatar bot-avatar'>AI</div>"+
+"<div class='bubble bot'>"+text+"</div>"
+
+}
+
+chat.appendChild(msg)
+
+chat.scrollTop=chat.scrollHeight
+
+}
+
+
+
+function showTyping(){
+
+let chat=document.getElementById("chatbox")
+
+let typing=document.createElement("div")
+
+typing.id="typing"
+
+typing.classList.add("message","bot-row")
+
+typing.innerHTML=
+
+"<div class='avatar bot-avatar'>AI</div>"+
+"<div class='bubble bot typing'>Typing...</div>"
+
+chat.appendChild(typing)
+
+chat.scrollTop=chat.scrollHeight
+
+}
+
+
+
+function removeTyping(){
+
+let t=document.getElementById("typing")
+
+if(t) t.remove()
+
+}
+
+
+
+document.getElementById("question")
+
+.addEventListener("keypress",function(e){
+
+if(e.key==="Enter"){
+
+sendQuestion()
+
+}
+
+})
+
+
+
+function newChat(){
+
+document.getElementById("chatbox").innerHTML=""
+
+}
+
+</script>
+
+</body>
+</html>
